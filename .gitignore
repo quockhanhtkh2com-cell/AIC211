@@ -1,0 +1,11 @@
+# Dữ liệu lớn: không đưa lên GitHub (giới hạn 100MB/file)
+data/dataset.csv
+data/emails_processed.csv
+
+# Model và feature sinh ra khi chạy pipeline
+outputs/models/
+
+__pycache__/
+*.pyc
+.venv/
+*.log

@@ -1,0 +1,15 @@
+=== ERROR ANALYSIS REPORT ===
+
+1. FALSE NEGATIVE — BEC bị bỏ sót
+   Số BEC bị bỏ sót: 1
+   Tổng BEC thật:    622
+   BEC Recall:       0.9984
+
+2. FALSE POSITIVE — Benign bị flag nhầm
+   Số benign bị flag nhầm thành BEC: 0
+
+3. PHÂN LOẠI LỖI
+   benign → phishing: 42 emails
+   phishing → benign: 37 emails
+   phishing → bec: 1 emails
+   bec → benign: 1 emails

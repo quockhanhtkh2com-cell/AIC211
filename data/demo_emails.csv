@@ -1,0 +1,4 @@
+sender,subject,body,label
+hr@company.com,Team Meeting Schedule Next Week,"Hi everyone, The team meeting next week will be held at 9:00 AM on Monday in Meeting Room A. Please prepare your work progress report before the meeting. Thank you, HR Department",benign
+security@micr0soft-verification.com,Your account will be locked in 24 hours,"Dear customer, We have detected unusual activity on your account. To avoid being locked out, please verify your information immediately at the link below: http://microsoft-account-verify-login.example If you do not verify within 24 hours, your account will be disabled. Security Department",phishing
+ceo.company@gmail.com,Urgent - Payment Required Today,"Hi Lan, I am currently in a meeting with partners and cannot make a call. Please transfer 185000000 VND to the supplier using the information I attached, today. This must be kept confidential until completed. Please confirm after the transfer. Director",bec
