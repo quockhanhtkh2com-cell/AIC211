@@ -1,6 +1,6 @@
 import numpy as np  #xử lý toán học
 import scipy.sparse as sp #làm ma trận
-from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score   #chia dữ liệu để train và test thành nhiều fold để cross validation, và chạy tự đọng để trả về đánh giá
+from sklearn.model_selection import StratifiedKFold, cross_val_score   #chia dữ liệu để train và test thành nhiều fold để cross validation, và chạy tự đọng để trả về đánh giá
 from sklearn.naive_bayes import MultinomialNB    #Thuật toán ML
 from sklearn.svm import LinearSVC #model cho bài toán phân loại văn bản
 from sklearn.calibration import CalibratedClassifierCV  #chuyển output thành xác suất dự đoán
@@ -25,25 +25,9 @@ print(f"y shape: {y.shape}")
 # =====================
 print("\nChia data...")
 
-# Chia theo INDEX để biết chính xác email nào nằm trong tập test
-# (error_analysis.py cần index này để ghép đúng email gốc với dự đoán)
-idx = np.arange(X.shape[0])
-
-# Chia 70% train, 30% tạm
-idx_train, idx_temp = train_test_split(
-    idx,
-    test_size=0.30,
-    random_state=42,
-    stratify=y  #giữ tỉ lệ class như nhau
-)
-
-# Chia 30% tạm → 15% val(kiểm tra trong lúc học), 15% test(kiểm tra cuối)
-idx_val, idx_test = train_test_split(
-    idx_temp,
-    test_size=0.50,
-    random_state=42,
-    stratify=y[idx_temp]
-)
+# Dùng đúng cách chia đã tạo trong feature_engineering.py
+# (70% train, 15% val, 15% test, có stratify) — TF-IDF chỉ fit trên train nên không bị leakage
+idx_train, idx_val, idx_test = np.load("outputs/models/split_indices.npy", allow_pickle=True)
 
 X = X.tocsr()  # csr mới cắt dòng theo index được
 X_train, y_train = X[idx_train], y[idx_train]

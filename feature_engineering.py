@@ -3,6 +3,7 @@ import numpy as np
 import re
 import scipy.sparse as sp
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
 import pickle
 import os
 
@@ -20,9 +21,27 @@ df["subject"] = df["subject"].fillna("")
 df["body"] = df["body"].fillna("")
 
 # =====================
+# 0. CHIA TRAIN / VAL / TEST (70/15/15)
+# =====================
+# Chia TRƯỚC khi fit TF-IDF để tránh data leakage:
+# TF-IDF chỉ được học từ vựng và IDF trên tập train,
+# tập val/test chỉ được transform như email "chưa từng thấy".
+label_map = {"benign": 0, "phishing": 1, "bec": 2}
+y_all = df["label"].map(label_map).values
+idx = np.arange(len(df))
+
+idx_train, idx_temp = train_test_split(
+    idx, test_size=0.30, random_state=42, stratify=y_all
+)
+idx_val, idx_test = train_test_split(
+    idx_temp, test_size=0.50, random_state=42, stratify=y_all[idx_temp]
+)
+print(f"Train: {len(idx_train)} | Val: {len(idx_val)} | Test: {len(idx_test)}")
+
+# =====================
 # 1. TF-IDF
 # =====================
-print("\nĐang tạo TF-IDF features...")
+print("\nĐang tạo TF-IDF features (fit trên tập train)...")
 
 tfidf = TfidfVectorizer(
     max_features=10000, # chỉ lấy 10,000 từ phổ biến nhất
@@ -31,7 +50,8 @@ tfidf = TfidfVectorizer(
     sublinear_tf=True   # dùng log để giảm ảnh hưởng của từ xuất hiện quá nhiều
 )
 
-X_tfidf = tfidf.fit_transform(df["text"])
+tfidf.fit(df["text"].iloc[idx_train])     # chỉ học từ tập train
+X_tfidf = tfidf.transform(df["text"])     # áp dụng cho toàn bộ
 print(f"TF-IDF shape: {X_tfidf.shape}")
 
 # =====================
@@ -101,11 +121,6 @@ print(f"Combined shape: {X_combined.shape}")
 # =====================
 print("\nEncoding labels...")
 
-label_map = {
-    "benign": 0,
-    "phishing": 1,
-    "bec": 2
-}
 y = df["label"].map(label_map)
 print(y.value_counts())
 
@@ -121,6 +136,7 @@ with open("outputs/models/tfidf_vectorizer.pkl", "wb") as f:
 # Lưu features và labels
 sp.save_npz("outputs/models/X_combined.npz", X_combined)
 np.save("outputs/models/y_labels.npy", y.values)
+np.save("outputs/models/split_indices.npy", np.array([idx_train, idx_val, idx_test], dtype=object), allow_pickle=True)
 
 print("\n=== KẾT QUẢ ===")
 print(f"X_combined shape: {X_combined.shape}")

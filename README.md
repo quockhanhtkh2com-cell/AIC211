@@ -25,6 +25,8 @@ Vì BEC ít dấu hiệu kỹ thuật nên dễ lọt qua bộ lọc. Dự án �
 
 Dữ liệu mất cân bằng, BEC chỉ chiếm khoảng 6.5%. Vì vậy dữ liệu được chia train/val/test theo tỉ lệ 70/15/15 có `stratify`, và Linear SVM dùng `class_weight="balanced"`.
 
+Dữ liệu được chia **trước** khi tạo TF-IDF: vectorizer chỉ học từ vựng và trọng số IDF trên tập train, còn tập val/test chỉ được transform. Cách này tránh data leakage, giúp kết quả trên tập test phản ánh đúng email mà mô hình chưa từng thấy.
+
 ## Pipeline
 
 | Bước | File | Nội dung |
@@ -32,8 +34,8 @@ Dữ liệu mất cân bằng, BEC chỉ chiếm khoảng 6.5%. Vì vậy dữ l
 | 1 | `check_data.py` | Kiểm tra kích thước, cột, giá trị thiếu, phân bố nhãn |
 | 2 | `preprocessing.py` | Chuẩn hóa nhãn, xử lý giá trị thiếu, làm sạch text (bỏ HTML, ký tự đặc biệt, stopwords) |
 | 3 | `eda.py` | Phân bố class, word cloud theo từng nhãn, phân bố độ dài email |
-| 4 | `feature_engineering.py` | TF-IDF (unigram + bigram, 10.000 features) kết hợp metadata features |
-| 5 | `train_models.py` | Chia dữ liệu và huấn luyện 3 mô hình |
+| 4 | `feature_engineering.py` | Chia train/val/test, fit TF-IDF (unigram + bigram, 10.000 features) trên tập train, kết hợp metadata features |
+| 5 | `train_models.py` | Huấn luyện 3 mô hình |
 | 6 | `evaluate.py` | Confusion matrix, Precision-Recall curve, bảng so sánh mô hình |
 | 7 | `error_analysis.py` | Phân tích BEC bị bỏ sót (false negative) và benign bị gắn nhầm thành BEC (false positive) |
 | 8 | `test.py` | Dự đoán email mới trong `data/demo_emails.csv`, kèm các dấu hiệu giải thích kết quả |
@@ -53,9 +55,9 @@ Dữ liệu mất cân bằng, BEC chỉ chiếm khoảng 6.5%. Vì vậy dữ l
 
 | Model | Accuracy | BEC Recall | BEC F1 |
 |---|---|---|---|
-| Naive Bayes | 0.9232 | 1.0000 | 0.7717 |
-| **Linear SVM** | **0.9915** | **0.9984** | **0.9984** |
-| XGBoost | 0.9824 | 0.9887 | 0.9887 |
+| Naive Bayes | 0.9241 | 1.0000 | 0.7736 |
+| **Linear SVM** | **0.9920** | **0.9984** | **0.9976** |
+| XGBoost | 0.9825 | 0.9855 | 0.9871 |
 
 **Mô hình được chọn: Linear SVM.** Mô hình này có Accuracy và BEC F1 cao nhất. Naive Bayes bắt được toàn bộ BEC nhưng F1 thấp (0.77), nghĩa là gắn nhãn BEC nhầm cho nhiều email khác, gây quá nhiều cảnh báo sai trong thực tế.
 
@@ -68,19 +70,20 @@ Dữ liệu mất cân bằng, BEC chỉ chiếm khoảng 6.5%. Vì vậy dữ l
 
 | Nhãn thật → Dự đoán | Số email |
 |---|---|
-| benign → phishing | 42 |
-| phishing → benign | 37 |
+| benign → phishing | 40 |
+| phishing → benign | 33 |
+| benign → bec | 1 |
 | phishing → bec | 1 |
 | bec → benign | 1 |
 
 - Phần lớn lỗi nằm giữa **benign và phishing**, không phải BEC.
 - Chỉ **1/622 email BEC bị bỏ sót**: một email hỏi về khoản thanh toán $39.143 cho chương trình giáo dục, không có từ khẩn cấp, không có link và giọng văn giống email công việc bình thường. Đây đúng là kiểu BEC khó phát hiện nhất khi chỉ dựa vào nội dung.
-- Không có email benign nào bị gắn nhầm thành BEC.
+- Chỉ 1 email benign bị gắn nhầm thành BEC.
 
 ## Hạn chế
 
 - **Kết quả BEC cao bất thường** (F1 ≈ 0.998). Nhiều khả năng email BEC trong dataset có văn phong khá đồng nhất, nên mô hình dễ học. Kết quả trên email thực tế sẽ thấp hơn.
-- TF-IDF đang được fit trên toàn bộ dữ liệu trước khi chia train/test, có thể gây rò rỉ thông tin (data leakage) nhẹ.
+- Phiên bản đầu fit TF-IDF trên toàn bộ dữ liệu (data leakage). Sau khi sửa thành chỉ fit trên tập train, kết quả gần như không đổi (Accuracy 0.9915 → 0.9920), cho thấy leakage ở đây không làm sai lệch đánh giá.
 - Metadata features còn đơn giản và dựa trên từ khóa tiếng Anh. Chưa kiểm tra header thật như `Reply-To` hay SPF/DKIM.
 
 ## Cách chạy
